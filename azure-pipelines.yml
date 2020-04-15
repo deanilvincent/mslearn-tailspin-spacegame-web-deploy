@@ -113,7 +113,7 @@ stages:
       vmImage: 'ubuntu-16.04'
     environment: test
     variables:
-    - group: 'Release' # Azure DevOps Library Variable Group Name
+    - group: 'Release'
     strategy:
       runOnce:
         deploy:
@@ -126,3 +126,32 @@ stages:
               azureSubscription: 'Resource Manager - Tailspin - Space Game'
               appName: '$(TailSpinWebTest)'
               package: '$(Pipeline.Workspace)/drop/$(buildConfiguration)/*.zip'
+
+- stage: 'Staging'
+  displayName: 'Deploy to the staging environment'
+  dependsOn: Test
+  jobs:
+  - deployment: Deploy
+    pool:
+      vmImage: 'ubuntu-16.04'
+    environment: staging
+    variables:
+    - group: 'Release'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: drop
+          - task: AzureWebApp@1
+            displayName: 'Azure App Service Deploy: website'
+            inputs:
+              azureSubscription: 'Resource Manager - Tailspin - Space Game'
+              appName: '$(TailSpinWebStaging)'
+              package: '$(Pipeline.Workspace)/drop/$(buildConfiguration)/*.zip'
+
+### NOTE
+# stage = Name of the stage
+# environment = Azure DevOps Pipelines->Environments
+# variables: - group = Azure DevOps->Library->Variable group name ex. Release
+# appName = Azure DevOps Pipelines->Library->Variables of the selected group name. ex. Release group name.
